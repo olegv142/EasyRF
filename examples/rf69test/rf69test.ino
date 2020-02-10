@@ -12,7 +12,9 @@ static RF69 g_rf(CS_PIN, RST_PIN);
 
 static uint8_t key[16] = {1,2,3,4,5,6,7,8};
 
-static uint8_t ping[] = {1, 0};
+static uint8_t ping[] = {2, 0, 0};
+
+unsigned bad_pkt_cnt = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -33,24 +35,35 @@ void loop() {
     Serial.print('.');
   bool has_pkt = g_rf.packet_rxed();
   if (!g_rf.cancel()) {
-    Serial.println('failed to cancel receiving');
+    Serial.println("failed to cancel receiving");
     return;
   }
   if (has_pkt) {
-    uint8_t pong[2];
+    uint8_t pong[3];
     g_rf.rd_packet(pong, sizeof(pong));
     Serial.println();
     Serial.print(pong[0]);
     Serial.print(' ');
-    Serial.println(pong[1]);
+    Serial.print(pong[1]);
+    Serial.print(' ');
+    Serial.print(pong[2]);
+    if (pong[0] != ping[0] || pong[1] != pong[2]) {
+      Serial.print(" bad packet");
+      ++bad_pkt_cnt;
+    }
+    Serial.println();
+    if (bad_pkt_cnt) {
+      Serial.print(bad_pkt_cnt);
+      Serial.println(" bad pkts");
+    }
   }
-  ++ping[1];
+  ping[2] = ++ping[1];
   if (!g_rf.send_packet(ping)) {
-    Serial.println('failed to send packet');
+    Serial.println("failed to send packet");
     return;
   }
   if (!g_rf.start_rx()) {
-    Serial.println('failed to start receiving');
+    Serial.println("failed to start receiving");
     return;
   }
   delay(500);
