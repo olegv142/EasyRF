@@ -74,7 +74,7 @@ public:
 
 	//
 	// The following methods will initiate transitions to different operating modes
-	// and wait till transition completion. The may fail in case the transition does not
+	// and wait till transition completion. They may fail in case the transition does not
 	// complete within predefined timeout. This typically means that transceiver becomes	
 	// unresponsive and should be reinitialized.
 	//
