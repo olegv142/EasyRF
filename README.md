@@ -9,6 +9,14 @@ Instead of interrupt line the physical connection of the RF69 module to microcon
 - Clear FIFO before writing new packet. This is quite necessary step missing from all other libraries. The problem is that FIFO is not necessary empty right after receive mode termination. It may contain partially received packet. By writing new package to such dirty FIFO we just appends it to the existing one. Subsequent switch to transmission mode will lead to transmitting garbage.
 - Internal checksum at the end of the payload. It is necessary since attacker can present us with garbage packet even in case the packet is encrypted and he does no know encryption key. The garbage can be decrypted the same way as normal packet so we need the way to filter it out. The second checksum is the simplest way to do it. Since it is encrypted it can't be constructed without knowing the encryption key.
 
+## Compatibility
+The code is compiled for AVR, STM32.
+Tested with ATmega328P, RFM69CW, RFM69HCW
+
+## Range test results
+RFM69CW -> RFM69CW with 4cm spring antenna, open air: 400m
+RFM69HCW with 2x5cm spring dipole -> RFM69CW with 4cm spring antenna, open air partially covered with forest: 1km
+
 ## Author
 
 Oleg Volkov (olegv142@gmail.com)
