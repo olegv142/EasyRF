@@ -91,6 +91,7 @@ void RF69::wr_packet(uint8_t const* data)
 bool RF69::rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr)
 {
 	uint32_t hash = FNV_OFFS;
+	uint16_t h_high, h_low;
 	tx_begin();
 	uint8_t len = SPI.transfer16(0);
 	if (len < 4 || len >= buff_len + 4)
@@ -111,8 +112,8 @@ bool RF69::rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr)
 		hash *= FNV_PRIME;
 	}
 
-	uint16_t h_high = SPI.transfer16(0);
-	uint16_t h_low  = SPI.transfer16(0);
+	h_high = SPI.transfer16(0);
+	h_low  = SPI.transfer16(0);
 	tx_end();
 	return h_high == (uint16_t)(hash >> 16) && h_low == (uint16_t)hash;
 
@@ -196,7 +197,7 @@ void RF69::set_mode(RF69_mode_t m)
 	wr_reg(1, (m << 2));
 }
 
-bool RF69::wait_mode(RF69_mode_t m, uint8_t tout = RF69_MODE_SWITCH_TOUT)
+bool RF69::wait_mode(RF69_mode_t m, uint8_t tout)
 {
 	uint32_t start = millis();
 	while (get_mode() != m) {

@@ -95,9 +95,9 @@ public:
 	bool   cancel()   { return switch_mode(rf_idle); }
 
 	// Query current operating mode
-	RF69_mode_t get_mode() { return (rd_reg(1) >> 2) & 7; }
+	RF69_mode_t get_mode() { return (RF69_mode_t)((rd_reg(1) >> 2) & 7); }
 	// Return the last set mode
-	RF69_mode_t last_mode() { return m_flags.last_mode; }
+	RF69_mode_t last_mode() { return (RF69_mode_t)m_flags.last_mode; }
 
 	// Write packet to transceiver. Should be called in idle state.
 	// The packet uses length prefix equals to the length of the message payload that follows.
