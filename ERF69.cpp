@@ -48,22 +48,12 @@ uint8_t	RF69::tx_reg(uint16_t w)
 	return r;
 }
 
-void RF69::rd_burst(uint8_t addr, uint8_t* buff, uint8_t buff_len, bool with_len_prefix)
+void RF69::rd_burst(uint8_t addr, uint8_t* buff, uint8_t len)
 {
-	uint8_t data_len;
 	tx_begin();
 	*buff = SPI.transfer16(addr << 8);
-	if (with_len_prefix)
-		data_len = *buff;
-	else
-		data_len = buff_len - 1;
-	for (++buff, --buff_len; data_len; --data_len) {
-		uint8_t v = SPI.transfer(0);
-		if (buff_len) {
-			*buff++ = v;
-			--buff_len;
-		}
-	}
+	for (++buff, --len; len; ++buff, --len)
+		*buff = SPI.transfer(0);
 	tx_end();
 }
 
@@ -74,6 +64,63 @@ void RF69::wr_burst(uint8_t addr, uint8_t const* data, uint8_t len)
 	for (++data, --len; len; ++data, --len)
 		SPI.transfer(*data);
 	tx_end();
+}
+
+// https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+#define FNV_PRIME 0x01000193LLU
+#define FNV_OFFS  0x811c9dc5LLU
+
+void RF69::wr_packet(uint8_t const* data)
+{
+	uint32_t hash = FNV_OFFS;
+	uint8_t len = *data;
+	clr_fifo();
+	tx_begin();
+	SPI.transfer16((0x80 << 8) | (len + 4));
+	for (++data; len; ++data, --len) {
+		uint8_t b = *data;
+		SPI.transfer(b);
+		hash ^= b;
+		hash *= FNV_PRIME;
+	}
+	SPI.transfer16(hash >> 16);
+	SPI.transfer16(hash);
+	tx_end();
+}
+
+bool RF69::rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr)
+{
+	uint32_t hash = FNV_OFFS;
+	tx_begin();
+	uint8_t len = SPI.transfer16(0);
+	if (len < 4 || len >= buff_len + 4)
+		goto skip;
+
+	*buff = (len -= 4);
+	for (++buff; len; ++buff)
+	{
+		uint8_t b = SPI.transfer(0);
+		--len;
+		if (addr) {
+			if (b && addr != b)
+				goto skip;
+			addr = 0;
+		}
+		*buff = b;
+		hash ^= b;
+		hash *= FNV_PRIME;
+	}
+
+	uint16_t h_high = SPI.transfer16(0);
+	uint16_t h_low  = SPI.transfer16(0);
+	tx_end();
+	return h_high == (uint16_t)(hash >> 16) && h_low == (uint16_t)hash;
+
+skip:
+	tx_end();
+	if (m_flags.last_mode == rf_rx)
+		restart_rx();
+	return false;
 }
 
 void RF69::init(struct RF69_config const* cfg)
@@ -126,7 +173,7 @@ void RF69::set_key(uint8_t const* key)
 {
 	if (key) {
 		wr_reg(0x3d, 3);
-		wr_burst(0x3e, key, RF69_KEY_LENGTH);
+		wr_burst(0x3e, key, RF69::key_len);
 	} else
 		wr_reg(0x3d, 2);
 }
@@ -159,7 +206,7 @@ bool RF69::wait_mode(RF69_mode_t m, uint8_t tout = RF69_MODE_SWITCH_TOUT)
 bool RF69::wait_event(RF69_event_t e, uint16_t tout)
 {
 	uint32_t start = millis();
-	while (!(get_events() & e)) {
+	while (!chk_events(e)) {
 		if (millis() - start > tout)
 			return false;
 	}

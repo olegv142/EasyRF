@@ -9,10 +9,7 @@
 #define RST_PIN 15
 
 static RF69 g_rf(CS_PIN, RST_PIN);
-
-uint8_t test[] = {2, 3, 5};
-
-uint8_t key[16] = {1,2,3,4,5,6,7,8};
+uint8_t key[RF69::key_len] = {1,2,3,4,5,6,7,8};
 
 unsigned bad_pkt_cnt = 0;
 
@@ -41,26 +38,30 @@ void loop() {
       return;
     }
     uint8_t pkt[3];
-    g_rf.rd_packet(pkt, sizeof(pkt));
     Serial.println();
-    Serial.print(pkt[0]);
-    Serial.print(' ');
-    Serial.print(pkt[1]);
-    Serial.print(' ');
-    Serial.print(pkt[2]);
-    if (pkt[0] != 2 || pkt[1] != pkt[2]) {
-      Serial.print(" bad packet");
+    if (g_rf.rd_packet(pkt, sizeof(pkt))) {
+      Serial.print(pkt[0]);
+      Serial.print(' ');
+      Serial.print(pkt[1]);
+      Serial.print(' ');
+      Serial.print(pkt[2]);
+      if (pkt[0] != 2 || pkt[1] != pkt[2]) {
+        Serial.print(" bad packet");
+        ++bad_pkt_cnt;
+      }
+      Serial.println();
+      pkt[0] = 2;
+      if (!g_rf.send_packet(pkt)) {
+        Serial.println("failed to send packet");
+        return;
+      }
+    } else {
+      Serial.println("corrupt packet");
       ++bad_pkt_cnt;
     }
-    Serial.println();
     if (bad_pkt_cnt) {
       Serial.print(bad_pkt_cnt);
       Serial.println(" bad pkts");
-    }
-    pkt[0] = 2;
-    if (!g_rf.send_packet(pkt)) {
-      Serial.println("failed to send packet");
-      return;
     }
     if (!g_rf.start_rx()) {
       Serial.println("failed to start receiving");
