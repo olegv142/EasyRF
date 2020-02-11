@@ -8,6 +8,10 @@
 #define CS_PIN  14
 #define RST_PIN 15
 
+// Comment the following line if you have module without high transmission power capabilities
+#define HCW_MODULE
+//#define HCW_BOOST_MAX
+
 static RF69 g_rf(CS_PIN, RST_PIN);
 static uint8_t key[RF69::key_len] = {1,2,3,4,5,6,7,8};
 
@@ -17,7 +21,14 @@ unsigned bad_pkt_cnt = 0;
 unsigned rf_err_cnt = 0;
 
 struct RF69_config cfg = {
-  433000, 600, rx_boost: true
+  433000, 600, rx_boost: true, 
+#ifdef HCW_MODULE
+#ifndef HCW_BOOST_MAX
+	tx_power: 0, tx_pw_mode: rf_pw_boost_normal
+#else
+	tx_power: 15, tx_pw_mode: rf_pw_boost_max
+#endif
+#endif
 };
 
 void rf_init() {

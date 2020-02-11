@@ -145,7 +145,10 @@ void RF69::init(struct RF69_config const* cfg)
 	if (cfg->rx_boost)
 		wr_reg(0x58, 0x2d);
 
-	uint8_t pw_cfg = 0x1f;
+	int8_t tx_pw = cfg->tx_power;
+	if (tx_pw < -16) tx_pw = -16;
+	if (tx_pw > 15)  tx_pw = 15;
+	uint8_t pw_cfg = 0x10 + tx_pw;
 	switch (cfg->tx_pw_mode) {
 	case rf_pw_boost_max:
 	case rf_pw_boost_high:

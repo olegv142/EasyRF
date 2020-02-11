@@ -28,6 +28,9 @@ typedef enum {
 
 // Power modes
 typedef enum {
+	// The normal mode is for modules without high transmission power capabilities.
+	// Don't use it for high power modules since they have transmission path 
+	// connected to separate pin.
 	rf_pw_normal = 0,
 	// The following modes are for the high power modules only
 	// They are using power amplifiers connected to separate pin of the chip (PA_BOOST)
@@ -46,7 +49,9 @@ struct RF69_config {
 	uint16_t	baud_rate;
 	// Boost receiver sensitivity
 	bool		rx_boost;
-	// Transmitter power mode. We are using the default power settings that gives maximum power in each mode.
+	// Transmit power in the range -16..15. Negative settings may not work on high power modules.
+	int8_t		tx_power;
+	// Transmitter power mode.
 	RF69_pw_mode_t	tx_pw_mode;
 };
 
