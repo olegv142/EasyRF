@@ -16,7 +16,7 @@ The code is compiled for AVR, STM32.
 Tested with ATmega328P, RFM69CW, RFM69HCW
 
 ## Range test results
-RFM69CW -> RFM69CW with 4cm spring antenna, open air: 400m
+RFM69CW -> RFM69CW with 4cm spring antenna (as on the figure above), open air: 400m
 
 RFM69HCW with 2x5cm spring dipole -> RFM69CW with 4cm spring antenna, open air partially covered with forest: 1km
 
