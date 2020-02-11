@@ -117,7 +117,7 @@ public:
 	// Write packet and send it waiting for completion.
 	bool   send_packet(uint8_t const* data) {
 			wr_packet(data);
-			return (start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT));
+			return start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT);
 		}
 
 protected:
