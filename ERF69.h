@@ -106,6 +106,8 @@ public:
 	void   wr_packet(uint8_t const* data);
 	// Read packet to the given buffer. If packet corrupted or does not fit to the buffer or addr does not match
 	// the first byte of packet payload the method returns false. Zero address match any other address.
+	// The method may be called either in idle or receiving state. In the latter case the receiving will be
+	// restarted automatically upon packet read.
 	bool   rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr = 0);
 
 	// Check if the packet was sent successfully in transmit mode.
