@@ -48,15 +48,6 @@ uint8_t	RF69::tx_reg(uint16_t w)
 	return r;
 }
 
-void RF69::rd_burst(uint8_t addr, uint8_t* buff, uint8_t len)
-{
-	tx_begin();
-	*buff = SPI.transfer16(addr << 8);
-	for (++buff, --len; len; ++buff, --len)
-		*buff = SPI.transfer(0);
-	tx_end();
-}
-
 void RF69::wr_burst(uint8_t addr, uint8_t const* data, uint8_t len)
 {
 	tx_begin();

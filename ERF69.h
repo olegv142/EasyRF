@@ -78,7 +78,8 @@ public:
 	void   init(struct RF69_config const* cfg);
 
 	// Both communication devices must be initialized with the same network_id.
-	// It provides the simple means for filtering garbage packets catch from the noise.
+	// It provides the simple means for filtering garbage packets catch from the
+	// noise and coming from foreign transmitters.
 	void   set_network_id(uint32_t id);
 	// Set encryption key (16 bytes long). Called with zero key pointer will clear current key.
 	void   set_key(uint8_t const* key);
@@ -136,7 +137,6 @@ protected:
 	void    wr_reg(uint8_t addr, uint8_t val) {
 			tx_reg(((0x80 | addr) << 8) | val);
 		}
-	void    rd_burst(uint8_t addr, uint8_t* buff, uint8_t len);
 	void    wr_burst(uint8_t addr, uint8_t const* data, uint8_t len);
 	// Start operation mode switch
 	void    set_mode(RF69_mode_t m);
