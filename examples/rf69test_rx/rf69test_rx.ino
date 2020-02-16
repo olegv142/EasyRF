@@ -12,17 +12,15 @@
 #define NODE_ADDR 0
 
 static RF69 g_rf(CS_PIN, RST_PIN);
-uint8_t key[RF69::key_len] = {1,2,3,4,5,6,7,8};
+static uint8_t key[RF69::key_len] = {1,2,3,4,5,6,7,8};
 
-unsigned bad_pkt_cnt = 0;
+static unsigned bad_pkt_cnt = 0;
 
 void setup() {
   Serial.begin(9600);
   g_rf.begin();
-  struct RF69_config cfg = {
-    433000, 600, rx_boost: true
-  };
-  g_rf.init(&cfg);
+  g_rf.init(rf_mode_1kb);
+  g_rf.set_freq(433000);
   g_rf.set_network_id(0x12345679ULL);
   g_rf.set_key(key);
   if (!g_rf.start_rx())

@@ -115,33 +115,72 @@ skip:
 	return false;
 }
 
-void RF69::init(struct RF69_config const* cfg)
+void RF69::init(RF69_tx_mode_t tx_mode, bool rx_boost)
 {
 	reset();
 
-	// configure carrier freq divider
-	uint32_t fdiv = (cfg->freq_khz << 11) / (RF69_OSC_KHZ >> 8);
-	wr_reg(7, fdiv >> 16);
-	wr_reg(8, fdiv >> 8);
-	wr_reg(9, fdiv);
+	// Configure parameters using the following heuristic proven experimentally:
+	// 1. FSK deviation should be at least twice the baud rate
+	// 2. RxBw should be at least by factor of 1.5 larger than the deviation
+	// 3. Gauss shaping, Manchester encoding does not improve range, so forget about them
+	// 4. The minimum deviation that can be ever used due to quartz stability issues is 10kHz
 
 	// configure baud rate
-	uint32_t brdiv = RF69_OSC_KHZ * 1000ULL / cfg->baud_rate;
+	uint32_t brdiv = RF69_OSC_KHZ;
+	brdiv >>= (int)rf_mode_1kb - (int)tx_mode;
 	wr_reg(3, brdiv >> 8);
 	wr_reg(4, brdiv);
 
-	wr_reg(0x13, 0); // disable over-current protection
-	wr_reg(0x37, (1<<7) | (1<<6) | (1<<4)); // var length packets, whitening, CRC, no address filtering
-	wr_reg(0x3c, 1<<7); // start tx on fifo not empty
+	// configure freq deviation
+	uint16_t dev = 0xa4;
+	// use 10kHz deviation for 4kb and lower rate modes
+	if (tx_mode < rf_mode_4kb)
+		dev <<= (int)rf_mode_4kb - (int)tx_mode;
 
-	if (cfg->rx_boost)
+	wr_reg(5, dev >> 8);
+	wr_reg(6, dev);
+
+	// configure receiver bandwidth
+	uint8_t bw_exp = 5;
+	// use 15kHz bandwidth for 4kb and lower rate modes
+	if (tx_mode < rf_mode_4kb)
+		bw_exp = 5 + (int)tx_mode - (int)rf_mode_4kb;
+
+	uint8_t dcc_bw = 4; // 1% of RxBw (default)
+	if (tx_mode > rf_mode_4kb)
+		dcc_bw = 4 + (int)tx_mode - (int)rf_mode_4kb;
+
+	wr_reg(0x19, (dcc_bw << 5) | bw_exp);
+
+	// configure packet options
+	wr_reg(0x37, (1<<7) | (1<<6) | (1<<4)); // var length packets, data whitening, CRC on, no address filtering
+
+	// configure miscellaneous options
+	wr_reg(0x3c, 1<<7); // start tx on fifo not empty
+	wr_reg(0x13, 0);    // disable over-current protection
+
+	if (rx_boost)
 		wr_reg(0x58, 0x2d);
 
-	int8_t tx_pw = cfg->tx_power;
+	m_flags.last_mode = rf_idle;
+	m_flags.max_boost = 0;
+}
+
+void RF69::set_freq(uint32_t freq_khz)
+{
+	// configure carrier freq divider
+	uint32_t fdiv = (freq_khz << 11) / (RF69_OSC_KHZ >> 8);
+	wr_reg(7, fdiv >> 16);
+	wr_reg(8, fdiv >> 8);
+	wr_reg(9, fdiv);
+}
+
+void RF69::set_tx_power(int8_t tx_pw, RF69_pw_mode_t tx_pw_mode)
+{
 	if (tx_pw < -16) tx_pw = -16;
 	if (tx_pw > 15)  tx_pw = 15;
 	uint8_t pw_cfg = 0x10 + tx_pw;
-	switch (cfg->tx_pw_mode) {
+	switch (tx_pw_mode) {
 	case rf_pw_boost_max:
 	case rf_pw_boost_high:
 		pw_cfg |= 1 << 5; // PA2
@@ -153,8 +192,7 @@ void RF69::init(struct RF69_config const* cfg)
 		break;		
 	}
 	wr_reg(0x11, pw_cfg);
-	m_flags.last_mode = rf_idle;
-	m_flags.max_boost = (cfg->tx_pw_mode == rf_pw_boost_max);
+	m_flags.max_boost = (tx_pw_mode == rf_pw_boost_max);
 }
 
 void RF69::set_network_id(uint32_t id)

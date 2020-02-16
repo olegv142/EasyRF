@@ -7,9 +7,10 @@
 
 #define CS_PIN  14
 #define RST_PIN 15
+#define LED_PIN 2
 
-// Comment the following line if you have module without high transmission power capabilities
-#define HCW_MODULE
+// Uncomment the following lines if you have high power module
+//#define HCW_MODULE
 //#define HCW_BOOST_MAX
 
 static RF69 g_rf(CS_PIN, RST_PIN);
@@ -17,30 +18,29 @@ static uint8_t key[RF69::key_len] = {1,2,3,4,5,6,7,8};
 
 static uint8_t ping[] = {2, 0, 0};
 
-unsigned bad_pkt_cnt = 0;
-unsigned rf_err_cnt = 0;
-
-struct RF69_config cfg = {
-  433000, 600, rx_boost: true, 
-#ifdef HCW_MODULE
-#ifndef HCW_BOOST_MAX
-	tx_power: 0, tx_pw_mode: rf_pw_boost_normal
-#else
-	tx_power: 15, tx_pw_mode: rf_pw_boost_max
-#endif
-#endif
-};
+static unsigned bad_pkt_cnt = 0;
+static unsigned rf_err_cnt = 0;
 
 void rf_init() {
-  g_rf.init(&cfg);
+  g_rf.init(rf_mode_1kb);
+  g_rf.set_freq(433000);
   g_rf.set_network_id(0x12345679ULL);
   g_rf.set_key(key);
+#ifdef HCW_MODULE
+#ifdef HCW_BOOST_MAX
+  g_rf.set_tx_power(15, rf_pw_boost_max);
+#else
+  g_rf.set_tx_power(15, rf_pw_boost_normal);
+#endif
+#endif
 }
 
 void setup() {
   Serial.begin(9600);
   g_rf.begin();
   rf_init();
+  digitalWrite(LED_PIN, LOW);
+  pinMode(LED_PIN, OUTPUT);
 }
 
 void loop() {
@@ -66,6 +66,8 @@ void loop() {
       if (pong[0] != ping[0] || pong[1] != pong[2]) {
         Serial.print(" bad packet");
         ++bad_pkt_cnt;
+      } else {
+          digitalWrite(LED_PIN, HIGH);
       }
       Serial.println();
     } else {
@@ -89,6 +91,7 @@ void loop() {
     goto err;
   }
   delay(500);
+  digitalWrite(LED_PIN, LOW);
   return;
 
 err:

@@ -39,21 +39,19 @@ typedef enum {
 	rf_pw_boost_max,
 } RF69_pw_mode_t;
 
-// Transceiver configuration
-struct RF69_config {
-	// The carrier frequency
-	uint32_t	freq_khz;
-	// The bit transmission rate. Since we are using the default receiver filter width and
-	// frequency deviation both equal to 5kHz, the baud rate should not exceed 10 Kbaud. You
-	// will have to change a lot of default parameters in case you really need more.
-	uint16_t	baud_rate;
-	// Boost receiver sensitivity
-	bool		rx_boost;
-	// Transmit power in the range -16..15. Negative settings may not work on high power modules.
-	int8_t		tx_power;
-	// Transmitter power mode.
-	RF69_pw_mode_t	tx_pw_mode;
-};
+// Transmission modes marked by data rate in kbauds.
+// The lower data rate the more range you can get in the field.
+// On the other hand the packet transmission time becomes longer with
+// reducing data rate so the channel interference becomes more possible.
+typedef enum {
+	rf_mode_32kb,// +-80kHz FSK, +-120kHz RxBw
+	rf_mode_16kb,// +-40kHz FSK, +-60kHz  RxBw
+	rf_mode_8kb, // +-20kHz FSK, +-30kHz  RxBw
+	rf_mode_4kb, // +-10kHz FSK, +-15kHz  RxBw
+	rf_mode_2kb, // +-10kHz FSK, +-15kHz  RxBw
+	rf_mode_1kb, // +-10kHz FSK, +-15kHz  RxBw
+	rf_mode_05kb,// +-10kHz FSK, +-15kHz  RxBw
+} RF69_tx_mode_t;
 
 class RF69 {
 public:
@@ -70,12 +68,24 @@ public:
 
 	// Initialize IO ports used for communications
 	void   begin();
-	// Check if transceiver is connected and powered on
+	// Check if transceiver is connected and powered on. May be called before init (but after begin).
 	bool   probe();
+
 	// Initialize transceiver. It makes hard reset first to have it clean.
 	// This method must be called before any actions taken. It also may be
-	// called to recover from fatal errors.
-	void   init(struct RF69_config const* cfg);
+	// called to recover from fatal errors. The rx_boost activates receiver sensitivity boost.
+	void   init(RF69_tx_mode_t tx_mode, bool rx_boost = true);
+
+	// Set carrier frequency
+	void   set_freq(uint32_t freq_khz);
+
+	// Set transmit power and power mode.
+	// The tx_pw must be in the range -16..15. Negative settings may not work on high power modules.
+	// You may set tx_pw_mode to non default value only if you have high power module.
+	// For low power module using this method is optional. You may work with the module defaults that give you the maximum power.
+	// For high power modules you have to call this method and pass one of the boost modes as second parameter. Otherwise
+	// the transmit power will be quite low.
+	void   set_tx_power(int8_t tx_pw, RF69_pw_mode_t tx_pw_mode = rf_pw_normal);
 
 	// Both communication devices must be initialized with the same network_id.
 	// It provides the simple means for filtering garbage packets catch from the
@@ -122,6 +132,8 @@ public:
 			wr_packet(data);
 			return start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT);
 		}
+	// Returns the transceiver firmware version
+	get_version() { return rd_reg(0x10); }
 
 protected:
 	// Hard reset transceiver
