@@ -133,7 +133,7 @@ public:
 			return start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT);
 		}
 	// Returns the transceiver firmware version
-	get_version() { return rd_reg(0x10); }
+	uint8_t get_version() { return rd_reg(0x10); }
 
 protected:
 	// Hard reset transceiver
