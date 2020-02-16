@@ -16,7 +16,7 @@ The code is compiled for AVR, STM32.
 Tested with ATmega328P, RFM69CW, RFM69HCW
 
 ## Range test results
-Using 600 baud bit rate and maximum power settings.
+Using 500 baud bit rate and maximum power settings.
 
 RFM69CW -> RFM69CW with 4cm spring antenna (as on the figure above), open air: 400m
 
