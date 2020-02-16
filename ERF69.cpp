@@ -122,7 +122,7 @@ void RF69::init(RF69_tx_mode_t tx_mode, bool rx_boost)
 	// Configure parameters using the following heuristic proven experimentally:
 	// 1. FSK deviation should be at least twice the baud rate
 	// 2. RxBw should be at least by factor of 1.5 larger than the deviation
-	// 3. Gauss shaping, Manchester encoding does not improve range, so forget about them
+	// 3. Gauss shaping, Manchester encoding don't improve range, so forget about them
 	// 4. The minimum deviation that can be ever used due to quartz stability issues is 10kHz
 
 	// configure baud rate
