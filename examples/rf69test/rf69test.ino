@@ -90,7 +90,7 @@ void loop() {
     Serial.println("failed to start receiving");
     goto err;
   }
-  delay(500);
+  delay(1000);
   digitalWrite(LED_PIN, LOW);
   return;
 
