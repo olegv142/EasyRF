@@ -115,7 +115,7 @@ skip:
 	return false;
 }
 
-void RF69::init(RF69_tx_mode_t tx_mode, bool rx_boost, bool rx_wide)
+void RF69::init(RF69_tx_mode_t tx_mode, bool rx_wide)
 {
 	reset();
 
@@ -166,9 +166,7 @@ void RF69::init(RF69_tx_mode_t tx_mode, bool rx_boost, bool rx_wide)
 	// configure miscellaneous options
 	wr_reg(0x3c, 1<<7); // start tx on fifo not empty
 	wr_reg(0x13, 0);    // disable over-current protection
-
-	if (rx_boost)
-		wr_reg(0x58, 0x2d);
+	wr_reg(0x58, 0x2d); // high sensitivity mode
 
 	m_flags.last_mode = rf_idle;
 	m_flags.max_boost = 0;

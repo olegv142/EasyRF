@@ -71,14 +71,13 @@ public:
 	// Check if transceiver is connected and powered on. May be called before init (but after begin).
 	bool   probe();
 
-	// Initialize transceiver. It makes hard reset first to have it clean. This method must be
-	// called before any actions taken. It also may be called to recover from fatal errors.
-	// The optimal set of transceiver parameters will be deduced from the desired baud rate
-	// passed as tx_mode parameter. The rx_boost flag activates receiver sensitivity boost.
+	// Initialize transceiver. It makes hard reset first to have it clean. This method must be called
+	// before any actions taken. It also may be called to recover from fatal errors. The optimal set of
+	// transceiver parameters will be deduced from the desired baud rate passed as tx_mode parameter.
 	// By setting rx_wide to true one can improve immunity to quartz oscillator frequency drift
 	// at the expense of slight lowering receiving range of modes with data rate below 4kb.
 	// Use this option for device installed outdoor.
-	void   init(RF69_tx_mode_t tx_mode, bool rx_boost = true, bool rx_wide = false);
+	void   init(RF69_tx_mode_t tx_mode, bool rx_wide = false);
 
 	// Set carrier frequency
 	void   set_freq(uint32_t freq_khz);
