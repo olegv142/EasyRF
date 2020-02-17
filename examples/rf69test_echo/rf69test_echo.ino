@@ -8,6 +8,9 @@
 #define CS_PIN  14
 #define RST_PIN 15
 
+#define BAUD_RATE 500
+#define FREQ_TOLERANCE 5000
+
 static RF69 g_rf(CS_PIN, RST_PIN);
 static uint8_t key[RF69::key_len] = {1,2,3,4,5,6,7,8};
 
@@ -16,7 +19,7 @@ static unsigned bad_pkt_cnt = 0;
 void setup() {
   Serial.begin(9600);
   g_rf.begin();
-  g_rf.init(rf_mode_1kb);
+  g_rf.init(BAUD_RATE, FREQ_TOLERANCE);
   g_rf.set_freq(433000);
   g_rf.set_network_id(0x12345679ULL);
   g_rf.set_key(key);

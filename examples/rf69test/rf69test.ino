@@ -9,6 +9,9 @@
 #define RST_PIN 15
 #define LED_PIN 2
 
+#define BAUD_RATE 500
+#define FREQ_TOLERANCE 5000
+
 // Uncomment the following lines if you have high power module
 //#define HCW_MODULE
 //#define HCW_BOOST_MAX
@@ -22,7 +25,7 @@ static unsigned bad_pkt_cnt = 0;
 static unsigned rf_err_cnt = 0;
 
 void rf_init() {
-  g_rf.init(rf_mode_1kb);
+  g_rf.init(BAUD_RATE, FREQ_TOLERANCE);
   g_rf.set_freq(433000);
   g_rf.set_network_id(0x12345679ULL);
   g_rf.set_key(key);

@@ -39,20 +39,6 @@ typedef enum {
 	rf_pw_boost_max,
 } RF69_pw_mode_t;
 
-// Transmission modes marked by data rate in kbauds.
-// The lower data rate the more range you can get in the field.
-// On the other hand the packet transmission time becomes longer with
-// reducing data rate so the channel interference becomes more possible.
-typedef enum {
-	rf_mode_32kb,// +-80kHz FSK, +-120kHz RxBw
-	rf_mode_16kb,// +-40kHz FSK, +-60kHz  RxBw
-	rf_mode_8kb, // +-20kHz FSK, +-30kHz  RxBw
-	rf_mode_4kb, // +-10kHz FSK, +-20kHz  RxBw
-	rf_mode_2kb, // +-10kHz FSK, +-15kHz  RxBw (20kHz if rx_wide is true)
-	rf_mode_1kb, // +-10kHz FSK, +-15kHz  RxBw (20kHz if rx_wide is true)
-	rf_mode_05kb,// +-10kHz FSK, +-15kHz  RxBw (20kHz if rx_wide is true)
-} RF69_tx_mode_t;
-
 class RF69 {
 public:
 	// Encryption key length
@@ -73,11 +59,13 @@ public:
 
 	// Initialize transceiver. It makes hard reset first to have it clean. This method must be called
 	// before any actions taken. It also may be called to recover from fatal errors. The optimal set of
-	// transceiver parameters will be deduced from the desired baud rate passed as tx_mode parameter.
-	// By setting rx_wide to true one can improve immunity to quartz oscillator frequency drift
-	// at the expense of slight lowering receiving range of modes with data rate below 4kb.
-	// Use this option for device installed outdoor.
-	void   init(RF69_tx_mode_t tx_mode, bool rx_wide = false);
+	// transceiver parameters will be deduced from the desired baud rate passed as parameter. The second
+	// parameter specifies the desired tolerance with respect to central frequency drift. The drift 
+	// originates from the quartz oscillator temperature dependence. It is typically in the range 10-20 ppm.
+	// So the effect is more noticeable in higher frequency bands.
+	// Note that the less baud rate the more range you can get in the field and wise versa. Unfortunately
+	// the minimum allowed baud rate is around 500 baud.
+	void   init(uint16_t br, uint16_t freq_margin);
 
 	// Set carrier frequency
 	void   set_freq(uint32_t freq_khz);
@@ -153,6 +141,12 @@ protected:
 			tx_reg(((0x80 | addr) << 8) | val);
 		}
 	void    wr_burst(uint8_t addr, uint8_t const* data, uint8_t len);
+	// Configure baud rate, returns actual rate set
+	uint16_t set_baud_rate(uint16_t br);
+	// Set frequency deviation
+	void    set_fdev(uint32_t fdev);
+	// Set receiver bandwidth
+	void    set_rx_bw(uint32_t bw);
 	// Start operation mode switch
 	void    set_mode(RF69_mode_t m);
 	// Wait operation mode switch completes

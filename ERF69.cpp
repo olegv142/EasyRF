@@ -5,6 +5,8 @@
 #include "ERF69.h"
 
 #define RF69_OSC_KHZ 32000
+#define RF69_OSC_HZ (RF69_OSC_KHZ * 1000ULL)
+#define RF69_FREQ_STEP (RF69_OSC_HZ/(1ULL<<19))
 
 void RF69::begin()
 {
@@ -115,50 +117,59 @@ skip:
 	return false;
 }
 
-void RF69::init(RF69_tx_mode_t tx_mode, bool rx_wide)
+uint16_t RF69::set_baud_rate(uint16_t br)
+{
+	// configure baud rate
+	uint32_t brdiv = 1 + RF69_OSC_HZ / br;
+	if (brdiv >= 0xffff)
+		brdiv = 0xffff;
+
+	wr_reg(3, brdiv >> 8);
+	wr_reg(4, brdiv);
+	return RF69_OSC_HZ / brdiv;
+}
+
+void RF69::set_fdev(uint32_t fdev)
+{
+	// set frequency deviation
+	uint32_t dev = fdev / RF69_FREQ_STEP;
+	if (dev > 0xffff)
+		dev = 0xffff;
+
+	Serial.println(dev);
+	wr_reg(5, dev >> 8);
+	wr_reg(6, dev);
+}
+
+void RF69::set_rx_bw(uint32_t bw)
+{
+	// set receiver bandwidth
+	uint8_t bw_exp = 0, bw_mant;
+	while (bw < 333333 && bw_exp < 7) {
+		bw *= 2;
+		bw_exp += 1;
+	}
+	if (bw >= 500000)
+		bw_mant = 0;
+	else if (bw >= 400000)
+		bw_mant = 1;
+	else
+		bw_mant = 2;
+
+	uint8_t dcc_bw = bw_exp > 4 ? bw_exp : 4; // 1% or less
+	wr_reg(0x19, (dcc_bw << 5) | (bw_mant << 3) | bw_exp);
+}
+
+void RF69::init(uint16_t br, uint16_t freq_margin)
 {
 	reset();
 
-	// Configure parameters using the following heuristic proven experimentally:
-	// 1. FSK deviation should be at least twice the baud rate
-	// 2. RxBw should be at least the deviation + br/2 + quartz tolerance
-	// 3. Gauss shaping, Manchester encoding don't improve range, so forget about them
-	// 4. The minimum deviation that can be ever used due to quartz stability issues is 10kHz
-	//    with 15kHz receiver bandwidth
-
-	// configure baud rate
-	uint32_t brdiv = RF69_OSC_KHZ;
-	brdiv >>= (int)rf_mode_1kb - (int)tx_mode;
-	wr_reg(3, brdiv >> 8);
-	wr_reg(4, brdiv);
-
-	// configure freq deviation
-	uint16_t dev = 0xa4;
-	// use 10kHz deviation for 4kb and lower rate modes
-	if (tx_mode < rf_mode_4kb)
-		// increase it proportional to the data rate
-		dev <<= (int)rf_mode_4kb - (int)tx_mode;
-
-	wr_reg(5, dev >> 8);
-	wr_reg(6, dev);
-
-	// configure receiver bandwidth
-	// see parameter table at RF69_tx_mode_t declaration
-	uint8_t bw_exp = 5, bw_mant = 0; // the minimum rx bandwidth is 15kHz
-	if (tx_mode < rf_mode_4kb)
-		// increase it proportional to the data rate
-		bw_exp = 5 + (int)tx_mode - (int)rf_mode_4kb;
-	else if (tx_mode == rf_mode_4kb || rx_wide) {
-		// use wider bandwidth of 20kHz
-		bw_mant = 2;
-		bw_exp = 4;
-	}
-
-	uint8_t dcc_bw = 4; // 1% of RxBw (default)
-	if (tx_mode > rf_mode_4kb)
-		dcc_bw = 4 + (int)tx_mode - (int)rf_mode_4kb;
-
-	wr_reg(0x19, (dcc_bw << 5) | (bw_mant << 3) | bw_exp);
+	br = set_baud_rate(br);
+	// use modulation index 3
+	uint32_t fdev = 3ULL*br/2 + freq_margin;
+	set_fdev(fdev);
+	// the minimum is fdev + br/2
+	set_rx_bw(fdev + br + freq_margin);
 
 	// configure packet options
 	wr_reg(0x37, (1<<7) | (1<<6) | (1<<4)); // var length packets, data whitening, CRC on, no address filtering
