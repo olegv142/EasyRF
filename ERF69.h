@@ -47,10 +47,10 @@ typedef enum {
 	rf_mode_32kb,// +-80kHz FSK, +-120kHz RxBw
 	rf_mode_16kb,// +-40kHz FSK, +-60kHz  RxBw
 	rf_mode_8kb, // +-20kHz FSK, +-30kHz  RxBw
-	rf_mode_4kb, // +-10kHz FSK, +-15kHz  RxBw
-	rf_mode_2kb, // +-10kHz FSK, +-15kHz  RxBw
-	rf_mode_1kb, // +-10kHz FSK, +-15kHz  RxBw
-	rf_mode_05kb,// +-10kHz FSK, +-15kHz  RxBw
+	rf_mode_4kb, // +-10kHz FSK, +-20kHz  RxBw
+	rf_mode_2kb, // +-10kHz FSK, +-15kHz  RxBw (20kHz if rx_wide is true)
+	rf_mode_1kb, // +-10kHz FSK, +-15kHz  RxBw (20kHz if rx_wide is true)
+	rf_mode_05kb,// +-10kHz FSK, +-15kHz  RxBw (20kHz if rx_wide is true)
 } RF69_tx_mode_t;
 
 class RF69 {
@@ -71,10 +71,14 @@ public:
 	// Check if transceiver is connected and powered on. May be called before init (but after begin).
 	bool   probe();
 
-	// Initialize transceiver. It makes hard reset first to have it clean.
-	// This method must be called before any actions taken. It also may be
-	// called to recover from fatal errors. The rx_boost activates receiver sensitivity boost.
-	void   init(RF69_tx_mode_t tx_mode, bool rx_boost = true);
+	// Initialize transceiver. It makes hard reset first to have it clean. This method must be
+	// called before any actions taken. It also may be called to recover from fatal errors.
+	// The optimal set of transceiver parameters will be deduced from the desired baud rate
+	// passed as tx_mode parameter. The rx_boost flag activates receiver sensitivity boost.
+	// By setting rx_wide to true one can improve immunity to quartz oscillator frequency drift
+	// at the expense of slight lowering receiving range of modes with data rate below 4kb.
+	// Use this option for device installed outdoor.
+	void   init(RF69_tx_mode_t tx_mode, bool rx_boost = true, bool rx_wide = false);
 
 	// Set carrier frequency
 	void   set_freq(uint32_t freq_khz);

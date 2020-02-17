@@ -115,15 +115,16 @@ skip:
 	return false;
 }
 
-void RF69::init(RF69_tx_mode_t tx_mode, bool rx_boost)
+void RF69::init(RF69_tx_mode_t tx_mode, bool rx_boost, bool rx_wide)
 {
 	reset();
 
 	// Configure parameters using the following heuristic proven experimentally:
 	// 1. FSK deviation should be at least twice the baud rate
-	// 2. RxBw should be at least by factor of 1.5 larger than the deviation
+	// 2. RxBw should be at least the deviation + br/2 + quartz tolerance
 	// 3. Gauss shaping, Manchester encoding don't improve range, so forget about them
 	// 4. The minimum deviation that can be ever used due to quartz stability issues is 10kHz
+	//    with 15kHz receiver bandwidth
 
 	// configure baud rate
 	uint32_t brdiv = RF69_OSC_KHZ;
@@ -135,22 +136,29 @@ void RF69::init(RF69_tx_mode_t tx_mode, bool rx_boost)
 	uint16_t dev = 0xa4;
 	// use 10kHz deviation for 4kb and lower rate modes
 	if (tx_mode < rf_mode_4kb)
+		// increase it proportional to the data rate
 		dev <<= (int)rf_mode_4kb - (int)tx_mode;
 
 	wr_reg(5, dev >> 8);
 	wr_reg(6, dev);
 
 	// configure receiver bandwidth
-	uint8_t bw_exp = 5;
-	// use 15kHz bandwidth for 4kb and lower rate modes
+	// see parameter table at RF69_tx_mode_t declaration
+	uint8_t bw_exp = 5, bw_mant = 0; // the minimum rx bandwidth is 15kHz
 	if (tx_mode < rf_mode_4kb)
+		// increase it proportional to the data rate
 		bw_exp = 5 + (int)tx_mode - (int)rf_mode_4kb;
+	else if (tx_mode == rf_mode_4kb || rx_wide) {
+		// use wider bandwidth of 20kHz
+		bw_mant = 2;
+		bw_exp = 4;
+	}
 
 	uint8_t dcc_bw = 4; // 1% of RxBw (default)
 	if (tx_mode > rf_mode_4kb)
 		dcc_bw = 4 + (int)tx_mode - (int)rf_mode_4kb;
 
-	wr_reg(0x19, (dcc_bw << 5) | bw_exp);
+	wr_reg(0x19, (dcc_bw << 5) | (bw_mant << 3) | bw_exp);
 
 	// configure packet options
 	wr_reg(0x37, (1<<7) | (1<<6) | (1<<4)); // var length packets, data whitening, CRC on, no address filtering
