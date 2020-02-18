@@ -45,6 +45,9 @@ public:
 	static const unsigned key_len = 16;
 	// The maximum length of the message payload (not including length prefix)
 	static const unsigned max_payload_len = 60;
+	// The minimum and maximum baud rate
+	static const unsigned min_baud_rate = 500;    // 12.5kHz rx bandwidth given 5kHz freq_margin
+	static const uint32_t max_baud_rate = 200000; // 500kHz rx bandwidth (the maximum allowed)
 
 	// Create transceiver object given the chip select and reset pins
 	RF69(uint8_t cs_pin, uint8_t rst_pin)
@@ -62,10 +65,11 @@ public:
 	// transceiver parameters will be deduced from the desired baud rate passed as parameter. The second
 	// parameter specifies the desired tolerance with respect to central frequency drift. The drift 
 	// originates from the quartz oscillator temperature dependence. It is typically in the range 10-20 ppm.
-	// So the effect is more noticeable in higher frequency bands.
+	// So the effect is more noticeable in higher frequency bands. The good value is 5000 for 433MHz band and
+	// 10000 for high frequency bands.
 	// Note that the less baud rate the more range you can get in the field and wise versa. Unfortunately
 	// the minimum allowed baud rate is around 500 baud.
-	void   init(uint16_t br, uint16_t freq_margin);
+	void   init(uint32_t br, uint16_t freq_margin);
 
 	// Set carrier frequency
 	void   set_freq(uint32_t freq_khz);
@@ -142,7 +146,7 @@ protected:
 		}
 	void    wr_burst(uint8_t addr, uint8_t const* data, uint8_t len);
 	// Configure baud rate, returns actual rate set
-	uint16_t set_baud_rate(uint16_t br);
+	void    set_baud_rate(uint32_t br);
 	// Set frequency deviation
 	void    set_fdev(uint32_t fdev);
 	// Set receiver bandwidth

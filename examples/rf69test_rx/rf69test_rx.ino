@@ -11,7 +11,7 @@
 // Set it to non-zero value to filter packets by 1st byte of payload
 #define NODE_ADDR 0
 
-#define BAUD_RATE 500
+#define BAUD_RATE RF69::min_baud_rate
 #define FREQ_TOLERANCE 5000
 
 static RF69 g_rf(CS_PIN, RST_PIN);

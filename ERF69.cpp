@@ -117,7 +117,7 @@ skip:
 	return false;
 }
 
-uint16_t RF69::set_baud_rate(uint16_t br)
+void RF69::set_baud_rate(uint32_t br)
 {
 	// configure baud rate
 	uint32_t brdiv = 1 + RF69_OSC_HZ / br;
@@ -126,7 +126,6 @@ uint16_t RF69::set_baud_rate(uint16_t br)
 
 	wr_reg(3, brdiv >> 8);
 	wr_reg(4, brdiv);
-	return RF69_OSC_HZ / brdiv;
 }
 
 void RF69::set_fdev(uint32_t fdev)
@@ -136,7 +135,6 @@ void RF69::set_fdev(uint32_t fdev)
 	if (dev > 0xffff)
 		dev = 0xffff;
 
-	Serial.println(dev);
 	wr_reg(5, dev >> 8);
 	wr_reg(6, dev);
 }
@@ -145,30 +143,29 @@ void RF69::set_rx_bw(uint32_t bw)
 {
 	// set receiver bandwidth
 	uint8_t bw_exp = 0, bw_mant;
-	while (bw < 333333 && bw_exp < 7) {
+	while (bw <= 250000 && bw_exp < 7) {
 		bw *= 2;
 		bw_exp += 1;
 	}
-	if (bw >= 500000)
-		bw_mant = 0;
-	else if (bw >= 400000)
-		bw_mant = 1;
-	else
+	if (bw <= 333333)
 		bw_mant = 2;
+	else if (bw <= 400000)
+		bw_mant = 1;
+	else // bw = 500000
+		bw_mant = 0;
 
-	uint8_t dcc_bw = bw_exp > 4 ? bw_exp : 4; // 1% or less
-	wr_reg(0x19, (dcc_bw << 5) | (bw_mant << 3) | bw_exp);
+	wr_reg(0x19, (7 << 5) | (bw_mant << 3) | bw_exp);
 }
 
-void RF69::init(uint16_t br, uint16_t freq_margin)
+void RF69::init(uint32_t br, uint16_t freq_margin)
 {
 	reset();
 
-	br = set_baud_rate(br);
+	set_baud_rate(br);
 	// use modulation index 3
-	uint32_t fdev = 3ULL*br/2 + freq_margin;
+	uint32_t fdev = 3*br/2 + freq_margin;
 	set_fdev(fdev);
-	// the minimum is fdev + br/2
+	// the bandwidth absolute minimum is fdev + br/2
 	set_rx_bw(fdev + br + freq_margin);
 
 	// configure packet options

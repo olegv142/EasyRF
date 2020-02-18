@@ -8,7 +8,7 @@
 #define CS_PIN  14
 #define RST_PIN 15
 
-#define BAUD_RATE 500
+#define BAUD_RATE RF69::min_baud_rate
 #define FREQ_TOLERANCE 5000
 
 static RF69 g_rf(CS_PIN, RST_PIN);
