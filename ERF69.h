@@ -86,7 +86,10 @@ public:
 
 	// Both communication devices must be initialized with the same network_id.
 	// It provides the simple means for filtering garbage packets catch from the
-	// noise and coming from foreign transmitters.
+	// noise and coming from foreign transmitters. The implementation may split
+	// this field onto network id part (3 bytes) and reception group id (1 byte).
+	// Though the transceiver optionally support the address field with similar
+	// semantic it does not work well with encryption and therefore not used.
 	void   set_network_id(uint32_t id);
 	// Set encryption key (16 bytes long). Called with zero key pointer will clear current key.
 	void   set_key(uint8_t const* key);
