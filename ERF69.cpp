@@ -59,11 +59,39 @@ void RF69::wr_burst(uint8_t addr, uint8_t const* data, uint8_t len)
 	tx_end();
 }
 
+bool RF69::rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr)
+{
+	tx_begin();
+	uint8_t len = SPI.transfer16(0);
+	if (len >= buff_len)
+		goto skip;
+
+	*buff = len;
+	for (++buff; len; --len, ++buff)
+	{
+		uint8_t b = SPI.transfer(0);
+		if (addr) {
+			if (b && addr != b)
+				goto skip;
+			addr = 0;
+		}
+		*buff = b;
+	}
+	tx_end();
+	return true;
+
+skip:
+	tx_end();
+	if (m_flags.last_mode == rf_rx)
+		restart_rx();
+	return false;
+}
+
 // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
 #define FNV_PRIME 0x01000193LLU
 #define FNV_OFFS  0x811c9dc5LLU
 
-void RF69::wr_packet(uint8_t const* data)
+void RF69::wr_packet_protected(uint8_t const* data)
 {
 	uint32_t hash = FNV_OFFS;
 	uint8_t len = *data;
@@ -81,7 +109,7 @@ void RF69::wr_packet(uint8_t const* data)
 	tx_end();
 }
 
-bool RF69::rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr)
+bool RF69::rd_packet_protected(uint8_t* buff, uint8_t buff_len, uint8_t addr)
 {
 	uint32_t hash = FNV_OFFS;
 	uint16_t h_high, h_low;
@@ -91,10 +119,9 @@ bool RF69::rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr)
 		goto skip;
 
 	*buff = (len -= 4);
-	for (++buff; len; ++buff)
+	for (++buff; len; --len, ++buff)
 	{
 		uint8_t b = SPI.transfer(0);
-		--len;
 		if (addr) {
 			if (b && addr != b)
 				goto skip;

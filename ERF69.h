@@ -44,7 +44,9 @@ public:
 	// Encryption key length
 	static const unsigned key_len = 16;
 	// The maximum length of the message payload (not including length prefix)
-	static const unsigned max_payload_len = 60;
+	static const unsigned max_payload_len = 64;
+	// The maximum length of checksum-protected payload (not including length prefix and payload checksum)
+	static const unsigned max_protected_payload_len = max_payload_len - 4;
 	// The minimum and maximum baud rate
 	static const unsigned min_baud_rate = 500;    // 12.5kHz rx bandwidth given 5kHz freq_margin
 	static const uint32_t max_baud_rate = 200000; // 500kHz rx bandwidth (the maximum allowed)
@@ -107,14 +109,24 @@ public:
 
 	// Write packet to transceiver. Should be called in idle state.
 	// The packet uses length prefix equals to the length of the message payload that follows.
-	// The maximum payload size is max_payload_len = 60 bytes (61 bytes taking length prefix into account).
+	// The maximum payload size is max_payload_len = 64 bytes (65 bytes taking length prefix into account).
 	// You have to call start_tx() to trigger actual packet transmission.
-	void   wr_packet(uint8_t const* data);
+	void   wr_packet(uint8_t const* data) {
+			clr_fifo();
+			wr_burst(0, data, 1 + *data);
+		}
 	// Read packet to the given buffer. If packet corrupted or does not fit to the buffer or addr does not match
 	// the first byte of packet payload the method returns false. Zero address match any other address.
 	// The method may be called either in idle or receiving state. In the latter case the receiving will be
 	// restarted automatically upon packet read.
 	bool   rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr = 0);
+	// The following two methods write and read payload automatically adding / checking the 32 bit checksum at the end
+	// of the payload. So the maximum size of the payload is reduced to max_protected_payload_len = 60 bytes
+	// (61 byte taking length prefix into account). The key difference between that checksum and packet checksum is
+	// that the former is encrypted (provided that the key is set by set_key()). So it works against attacks using random
+	// data that have valid packet checksum. The attacker can't calculate encrypted checksum without knowing encryption key.
+	void   wr_packet_protected(uint8_t const* data);
+	bool   rd_packet_protected(uint8_t* buff, uint8_t buff_len, uint8_t addr = 0);
 
 	// Check if the packet was sent successfully in transmit mode.
 	bool   packet_sent() { return chk_events(rf_PacketSent); }
@@ -125,6 +137,10 @@ public:
 	// Write packet and send it waiting for completion.
 	bool   send_packet(uint8_t const* data) {
 			wr_packet(data);
+			return start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT);
+		}
+	bool   send_packet_protected(uint8_t const* data) {
+			wr_packet_protected(data);
 			return start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT);
 		}
 	// Returns the transceiver firmware version
