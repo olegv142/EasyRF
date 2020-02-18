@@ -9,6 +9,8 @@ The code is written solely based on the datasheet using default settings as much
 
 Instead of interrupt line the physical connection of the RF69 module to microcontroller includes the reset line. Using hard reset is necessary to be able to recover from any kind of anomalies that may occur during long term operation. Other important additions in comparison to existing libraries are the following:
 - Simple configuration. Just choose baud rate and all necessary parameters will be automatically deduced.
+- Guaranteed oscillator frequency tolerance. The tolerance value is passed as parameter to initialization function.
+- The central frequency can be set with 1kHz step. Such precision may be used to compensate the oscillator drift.
 - Additional payload protection by encrypted checksum at the end of the payload. It is necessary since attacker can present us with garbage packet even in case the packet is encrypted and he does not know encryption key. The garbage can be decrypted the same way as normal packet so we need the way to filter it out. The second checksum is the simplest way to do it. Since it is encrypted it can't be constructed without knowing the encryption key.
 
 The code compiled for AVR uses less than 4kB of flash. The instance of transceiver driver uses 5 bytes in RAM.
