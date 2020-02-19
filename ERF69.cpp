@@ -184,14 +184,17 @@ void RF69::set_rx_bw(uint32_t bw)
 	wr_reg(0x19, (7 << 5) | (bw_mant << 3) | bw_exp);
 }
 
-void RF69::init(uint32_t br, uint16_t freq_margin)
+void RF69::init(uint32_t br, uint8_t freq_margin_khz)
 {
 	reset();
 
 	set_baud_rate(br);
+
+	uint32_t freq_margin = 1000ULL * freq_margin_khz;
 	// use modulation index 3
 	uint32_t fdev = 3*br/2 + freq_margin;
 	set_fdev(fdev);
+
 	// the bandwidth absolute minimum is fdev + br/2
 	set_rx_bw(fdev + br + freq_margin);
 

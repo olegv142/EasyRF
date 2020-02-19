@@ -9,7 +9,7 @@
 #define RST_PIN 15
 
 #define BAUD_RATE RF69::min_baud_rate
-#define FREQ_TOLERANCE 5000
+#define FREQ_TOLERANCE 5
 
 static RF69 g_rf(CS_PIN, RST_PIN);
 static uint8_t key[RF69::key_len] = {1,2,3,4,5,6,7,8};

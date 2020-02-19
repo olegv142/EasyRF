@@ -10,7 +10,7 @@
 #define LED_PIN 2
 
 #define BAUD_RATE RF69::min_baud_rate
-#define FREQ_TOLERANCE 5000
+#define FREQ_TOLERANCE 5
 
 // Uncomment the following lines if you have high power module
 //#define HCW_MODULE

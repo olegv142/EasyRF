@@ -62,16 +62,14 @@ public:
 	// Check if transceiver is connected and powered on. May be called before init (but after begin).
 	bool   probe();
 
-	// Initialize transceiver. It makes hard reset first to have it clean. This method must be called
-	// before any actions taken. It also may be called to recover from fatal errors. The optimal set of
-	// transceiver parameters will be deduced from the desired baud rate passed as parameter. The second
-	// parameter specifies the desired tolerance with respect to central frequency drift. The drift 
-	// originates from the quartz oscillator temperature dependence. It is typically in the range 10-20 ppm.
-	// So the effect is more noticeable in higher frequency bands. The good value is 5000 for 433MHz band and
-	// 10000 for high frequency bands.
-	// Note that the less baud rate the more range you can get in the field and wise versa. Unfortunately
-	// the minimum allowed baud rate is around 500 baud.
-	void   init(uint32_t br, uint16_t freq_margin);
+	// Initialize transceiver. It makes hard reset first to have it clean. This method must be called before
+	// any actions taken. It also may be called to recover from fatal errors. The optimal set of transceiver
+	// parameters will be deduced from the desired baud rate passed as parameter. The less baud rate the more
+	// range you can get in the field and wise versa. The second parameter specifies the desired tolerance
+	// with respect to central frequency drift. The drift originates from the quartz oscillator temperature
+	// dependence. It is typically in the range 10-20 ppm. So the effect is more noticeable in higher frequency
+	// bands. The good value is 5 for 433MHz band and 10 for high frequency bands.
+	void   init(uint32_t br, uint8_t freq_margin_khz);
 
 	// Set carrier frequency
 	void   set_freq(uint32_t freq_khz);
@@ -84,12 +82,12 @@ public:
 	// the transmit power will be quite low.
 	void   set_tx_power(int8_t tx_pw, RF69_pw_mode_t tx_pw_mode = rf_pw_normal);
 
-	// Both communication devices must be initialized with the same network_id.
-	// It provides the simple means for filtering garbage packets catch from the
-	// noise and coming from foreign transmitters. The implementation may split
-	// this field onto network id part (3 bytes) and reception group id (1 byte).
-	// Though the transceiver optionally support the address field with similar
-	// semantic it does not work well with encryption and therefore not used.
+	// Both communication devices must be initialized with the same network_id (AKA sync word). It provides the
+	// simple means for filtering garbage packets catch from the noise and coming from foreign transmitters.
+	// The implementation may split this field onto network id part (3 bytes) and reception group id (1 byte).
+	// The transceiver optionally support the address field with similar semantic but it does not work well with encryption
+	// and therefore not used. The only downside of using network id for addressing is the lack of broadcast address.
+	// If you really need it use address parameter of rd_packet that enforce address checking at packet readout stage.
 	void   set_network_id(uint32_t id);
 	// Set encryption key (16 bytes long). Called with zero key pointer will clear current key.
 	void   set_key(uint8_t const* key);
