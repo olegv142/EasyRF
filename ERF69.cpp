@@ -59,7 +59,7 @@ void RF69::wr_burst(uint8_t addr, uint8_t const* data, uint8_t len)
 	tx_end();
 }
 
-bool RF69::rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr)
+bool RF69::rd_packet(uint8_t* buff, uint8_t buff_len)
 {
 	tx_begin();
 	uint8_t len = SPI.transfer16(0);
@@ -70,11 +70,6 @@ bool RF69::rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr)
 	for (++buff; len; --len, ++buff)
 	{
 		uint8_t b = SPI.transfer(0);
-		if (addr) {
-			if (b && addr != b)
-				goto skip;
-			addr = 0;
-		}
 		*buff = b;
 	}
 	tx_end();
@@ -109,7 +104,7 @@ void RF69::wr_packet_protected(uint8_t const* data)
 	tx_end();
 }
 
-bool RF69::rd_packet_protected(uint8_t* buff, uint8_t buff_len, uint8_t addr)
+bool RF69::rd_packet_protected(uint8_t* buff, uint8_t buff_len)
 {
 	uint32_t hash = FNV_OFFS;
 	uint16_t h_high, h_low;
@@ -122,11 +117,6 @@ bool RF69::rd_packet_protected(uint8_t* buff, uint8_t buff_len, uint8_t addr)
 	for (++buff; len; --len, ++buff)
 	{
 		uint8_t b = SPI.transfer(0);
-		if (addr) {
-			if (b && addr != b)
-				goto skip;
-			addr = 0;
-		}
 		*buff = b;
 		hash ^= b;
 		hash *= FNV_PRIME;

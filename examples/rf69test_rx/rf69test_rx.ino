@@ -8,9 +8,6 @@
 #define CS_PIN  14
 #define RST_PIN 15
 
-// Set it to non-zero value to filter packets by 1st byte of payload
-#define NODE_ADDR 0
-
 #define BAUD_RATE RF69::min_baud_rate
 #define FREQ_TOLERANCE 5
 
@@ -38,7 +35,7 @@ void loop() {
   else
     Serial.print('.');
   if (g_rf.packet_rxed()) {
-    if (g_rf.rd_packet(pkt, sizeof(pkt), NODE_ADDR)) {
+    if (g_rf.rd_packet(pkt, sizeof(pkt))) {
       Serial.println();
       Serial.print(pkt[0]);
       Serial.print(' ');

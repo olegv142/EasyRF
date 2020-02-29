@@ -86,8 +86,7 @@ public:
 	// simple means for filtering garbage packets catch from the noise and coming from foreign transmitters.
 	// The implementation may split this field onto network id part (3 bytes) and reception group id (1 byte).
 	// The transceiver optionally support the address field with similar semantic but it does not work well with encryption
-	// and therefore not used. The only downside of using network id for addressing is the lack of broadcast address.
-	// If you really need it use address parameter of rd_packet that enforce address checking at packet readout stage.
+	// and therefore not used.
 	void   set_network_id(uint32_t id);
 	// Set encryption key (16 bytes long). Called with zero key pointer will clear current key.
 	void   set_key(uint8_t const* key);
@@ -116,18 +115,17 @@ public:
 			clr_fifo();
 			wr_burst(0, data, 1 + *data);
 		}
-	// Read packet to the given buffer. If packet corrupted or does not fit to the buffer or addr does not match
-	// the first byte of packet payload the method returns false. Zero address match any other address.
+	// Read packet to the given buffer. If packet corrupted or does not fit to the buffer the method returns false.
 	// The method may be called either in idle or receiving state. In the latter case the receiving will be
 	// restarted automatically upon packet read.
-	bool   rd_packet(uint8_t* buff, uint8_t buff_len, uint8_t addr = 0);
+	bool   rd_packet(uint8_t* buff, uint8_t buff_len);
 	// The following two methods write and read payload automatically adding / checking the 32 bit checksum at the end
 	// of the payload. So the maximum size of the payload is reduced to max_protected_payload_len = 60 bytes
 	// (61 byte taking length prefix into account). The key difference between that checksum and packet checksum is
 	// that the former is encrypted (provided that the key is set by set_key()). So it works against attacks using random
-	// data that have valid packet checksum. The attacker can't calculate encrypted checksum without knowing encryption key.
+	// data or data partially copied from older messages. The attacker can't calculate encrypted checksum without knowing encryption key.
 	void   wr_packet_protected(uint8_t const* data);
-	bool   rd_packet_protected(uint8_t* buff, uint8_t buff_len, uint8_t addr = 0);
+	bool   rd_packet_protected(uint8_t* buff, uint8_t buff_len);
 
 	// Check if the packet was sent successfully in transmit mode.
 	bool   packet_sent() { return chk_events(rf_PacketSent); }
