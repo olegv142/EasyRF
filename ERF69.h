@@ -136,11 +136,11 @@ public:
 	// Write packet and send it waiting for completion.
 	bool   send_packet(uint8_t const* data) {
 			wr_packet(data);
-			return start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT);
+			return start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT) && cancel();
 		}
 	bool   send_packet_protected(uint8_t const* data) {
 			wr_packet_protected(data);
-			return start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT);
+			return start_tx() && wait_event(rf_PacketSent, RF69_PKT_SEND_TOUT) && cancel();
 		}
 	// Returns the transceiver firmware version
 	uint8_t get_version() { return rd_reg(0x10); }
