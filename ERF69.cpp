@@ -15,6 +15,7 @@ void RF69::begin()
 	pinMode(m_cs_pin, OUTPUT);
 	digitalWrite(m_rst_pin, LOW);
 	pinMode(m_rst_pin, OUTPUT);
+	reset();
 }
 
 void RF69::reset()
@@ -176,8 +177,6 @@ void RF69::set_rx_bw(uint32_t bw)
 
 void RF69::init(uint32_t br, uint8_t freq_margin_khz)
 {
-	reset();
-
 	set_baud_rate(br);
 
 	uint32_t freq_margin = 1000ULL * freq_margin_khz;
