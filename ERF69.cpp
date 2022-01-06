@@ -217,6 +217,7 @@ void RF69::set_tx_power(int8_t tx_pw, RF69_pw_mode_t tx_pw_mode)
 	case rf_pw_boost_max:
 	case rf_pw_boost_high:
 		pw_cfg |= 1 << 5; // PA2
+		// fallthrough
 	case rf_pw_boost_normal:
 		pw_cfg |= 1 << 6; // PA1
 		break;
