@@ -61,6 +61,8 @@ public:
 	void   begin();
 	// Check if transceiver is connected and powered on. May be called before init (but after begin).
 	bool   probe();
+	// Hard reset transceiver. Its called by begin()
+	void	reset();
 
 	// Initialize transceiver. It makes hard reset first to have it clean. This method must be called before
 	// any actions taken. It also may be called to recover from fatal errors. The optimal set of transceiver
@@ -146,8 +148,6 @@ public:
 	uint8_t get_version() { return rd_reg(0x10); }
 
 protected:
-	// Hard reset transceiver
-	void	reset();
 	// Data exchange transaction begin / end
 	void    tx_begin();
 	void    tx_end();
